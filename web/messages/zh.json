@@ -55,6 +55,10 @@
     "about": {
       "title": "关于"
     },
+    "datastore": {
+      "title": "数据集",
+      "name": "名称"
+    },
     "reportStyle": {
       "writingStyle": "写作风格",
       "chooseTitle": "选择写作风格",

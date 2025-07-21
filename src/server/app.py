@@ -8,7 +8,7 @@ import os
 from typing import Annotated, List, cast
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from langchain_core.messages import AIMessageChunk, BaseMessage, ToolMessage
@@ -446,3 +446,42 @@ async def config():
         rag=RAGConfigResponse(provider=SELECTED_RAG_PROVIDER),
         models=get_configured_llm_models(),
     )
+
+
+DATASTORE_DIR = os.getenv("LOCAL_DATASTORE_DIR", "datasets")
+
+
+@app.get("/api/datastores")
+async def list_datastores():
+    os.makedirs(DATASTORE_DIR, exist_ok=True)
+    meta_path = os.path.join(DATASTORE_DIR, "datasets.json")
+    if os.path.exists(meta_path):
+        with open(meta_path, "r", encoding="utf-8") as f:
+            datastores = json.load(f)
+    else:
+        datastores = []
+    return {"datastores": datastores}
+
+
+@app.post("/api/datastores")
+async def create_datastore(
+    name: Annotated[str, Form(...)], files: list[UploadFile] = File(...)
+):
+    os.makedirs(DATASTORE_DIR, exist_ok=True)
+    meta_path = os.path.join(DATASTORE_DIR, "datasets.json")
+    if os.path.exists(meta_path):
+        with open(meta_path, "r", encoding="utf-8") as f:
+            datastores = json.load(f)
+    else:
+        datastores = []
+    dataset_id = str(uuid4())
+    ds_path = os.path.join(DATASTORE_DIR, dataset_id)
+    os.makedirs(ds_path, exist_ok=True)
+    for upload in files:
+        dest = os.path.join(ds_path, upload.filename)
+        with open(dest, "wb") as f:
+            f.write(await upload.read())
+    datastores.append({"id": dataset_id, "name": name})
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(datastores, f)
+    return {"id": dataset_id, "name": name}
