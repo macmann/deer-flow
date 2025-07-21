@@ -4,6 +4,7 @@
 import { StarFilledIcon, GitHubLogoIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { useTranslations } from 'next-intl';
+import { useSession, signOut, signIn } from "next-auth/react";
 
 import { LanguageSwitcher } from "~/components/deer-flow/language-switcher";
 import { NumberTicker } from "~/components/magicui/number-ticker";
@@ -12,6 +13,7 @@ import { env } from "~/env";
 
 export function SiteHeader() {
   const t = useTranslations('common');
+  const { data: session } = useSession();
 
   return (
     <header className="supports-backdrop-blur:bg-background/80 bg-background/40 sticky top-0 left-0 z-40 flex h-15 w-full flex-col items-center backdrop-blur-lg">
@@ -41,6 +43,9 @@ export function SiteHeader() {
               {env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY &&
                 env.GITHUB_OAUTH_TOKEN && <StarCounter />}
             </Link>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => session ? signOut() : signIn()}>
+            {session ? 'Sign out' : 'Sign in'}
           </Button>
         </div>
       </div>
