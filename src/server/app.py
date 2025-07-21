@@ -8,7 +8,16 @@ import os
 from typing import Annotated, List, cast
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Query,
+    UploadFile,
+    File,
+    Form,
+    Header,
+)
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from langchain_core.messages import AIMessageChunk, BaseMessage, ToolMessage
@@ -41,10 +50,15 @@ from src.server.rag_request import (
     RAGResourcesResponse,
 )
 from src.tools import VolcengineTTS
+from src.server.user_tracker import add_user, list_users
 
 logger = logging.getLogger(__name__)
 
 INTERNAL_SERVER_ERROR_DETAIL = "Internal Server Error"
+
+ADMIN_USERNAME = "admin@gmail.com"
+ADMIN_PASSWORD = "admin"
+ADMIN_TOKEN = "admin-token"
 
 app = FastAPI(
     title="DeerFlow API",
@@ -485,3 +499,33 @@ async def create_datastore(
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(datastores, f)
     return {"id": dataset_id, "name": name}
+
+
+class UserRecord(BaseModel):
+    email: str
+
+
+@app.post("/api/users/record")
+async def record_user(record: UserRecord):
+    """Record a user login."""
+    add_user(record.email)
+    return {"success": True}
+
+
+class AdminLogin(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/api/admin/login")
+async def admin_login(data: AdminLogin):
+    if data.username == ADMIN_USERNAME and data.password == ADMIN_PASSWORD:
+        return {"token": ADMIN_TOKEN}
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+
+@app.get("/api/admin/users")
+async def admin_users(authorization: str = Header(...)):
+    if authorization != f"Bearer {ADMIN_TOKEN}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return list_users()
