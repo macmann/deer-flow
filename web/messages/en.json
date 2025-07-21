@@ -55,6 +55,10 @@
     "about": {
       "title": "About"
     },
+    "datastore": {
+      "title": "Datastores",
+      "name": "Name"
+    },
     "reportStyle": {
       "writingStyle": "Writing Style",
       "chooseTitle": "Choose Writing Style",

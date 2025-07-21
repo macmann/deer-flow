@@ -20,6 +20,7 @@ SELECTED_SEARCH_ENGINE = os.getenv("SEARCH_API", SearchEngine.TAVILY.value)
 
 
 class RAGProvider(enum.Enum):
+    LOCAL_DATASTORE = "local_datastore"
     RAGFLOW = "ragflow"
     VIKINGDB_KNOWLEDGE_BASE = "vikingdb_knowledge_base"
 

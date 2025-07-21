@@ -5,7 +5,7 @@ import { MagicWandIcon } from "@radix-ui/react-icons";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, Lightbulb, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 
 import { Detective } from "~/components/deer-flow/icons/detective";
 import MessageInput, {
@@ -23,6 +23,7 @@ import {
   setEnableBackgroundInvestigation,
   useSettingsStore,
 } from "~/core/store";
+import { useDatastoreStore, loadDatastores } from "~/core/store/datastore-store";
 import { cn } from "~/lib/utils";
 
 export function InputBox({
@@ -60,6 +61,13 @@ export function InputBox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<MessageInputRef>(null);
   const feedbackRef = useRef<HTMLDivElement>(null);
+  const selectedDatasets = useSettingsStore(
+    (state) => state.general.selectedDatasets,
+  );
+  const datastores = useDatastoreStore((state) => state.datastores);
+  useEffect(() => {
+    loadDatastores();
+  }, []);
 
   // Enhancement state
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -68,6 +76,11 @@ export function InputBox({
 
   const handleSendMessage = useCallback(
     (message: string, resources: Array<Resource>) => {
+      const selectedResources = selectedDatasets
+        .map((id) => datastores.find((d) => d.id === id))
+        .filter(Boolean)
+        .map((d) => ({ uri: `rag://dataset/${d!.id}`, title: d!.name }));
+      resources = [...selectedResources, ...resources];
       if (responding) {
         onCancel?.();
       } else {
